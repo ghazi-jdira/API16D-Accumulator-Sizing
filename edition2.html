@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API 16D Accumulator Sizing &mdash; 2nd Edition</title>
+  <meta name="description" content="API 16D 2nd-edition surface BOP accumulator sizing calculator: Method A (ideal gas) and Method B (NIST nitrogen density)." />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap topbar-row">
+      <div class="brand">
+        <div class="logo-chip"><img src="assets/Logo.png" alt="Sigma Energy" class="logo" /></div>
+        <div>
+          <h1>API 16D Accumulator Sizing <span class="tag">2nd edition</span></h1>
+          <p class="sub">Surface BOP stack &mdash; Method A (ideal gas) + Method B (NIST nitrogen density). <a href="index.html" class="ed-link">&larr; 1st edition (Method B / C)</a></p>
+        </div>
+      </div>
+      <button id="logoutBtn" class="logout" style="display:none">Log out</button>
+    </div>
+  </header>
+
+  <main class="wrap layout">
+    <!-- ============ INPUT COLUMN ============ -->
+    <section class="col inputs">
+      <div class="card">
+        <h2>Environmental &amp; Accumulator Inputs</h2>
+        <div class="grid2">
+          <label>Atmospheric pressure <span class="u">psia</span>
+            <input type="number" id="atm" value="14.7" step="0.1" /></label>
+          <label>Surface temp at precharge <span class="u">&deg;F</span>
+            <input type="number" id="surfaceTempF" value="85" step="1" /></label>
+          <label>Max surface temp <span class="u">&deg;F</span>
+            <input type="number" id="maxSurfaceTempF" value="100" step="1" /></label>
+          <label>Pump-stop / charged press. (Cond. 1) <span class="u">psig</span>
+            <input type="number" id="chargedPsig" value="3000" step="50" /></label>
+          <label>Specified precharge (Cond. 0) <span class="u">psig</span>
+            <input type="number" id="prechargePsig" value="1700" step="10" /></label>
+          <label>Operator shear pressure <span class="u">psig</span>
+            <input type="number" id="operatorShearPsig" value="1958" step="10" /></label>
+          <label>Gas volume per bottle <span class="u">gal</span>
+            <input type="number" id="gasVolPerBottle" value="11" step="1" /></label>
+          <label>Bottle pressure rating <span class="u">psig</span>
+            <input type="number" id="bottleRatingPsig" value="3000" step="50" /></label>
+        </div>
+        <p class="note">MOP (Condition 2) = max(pressure-to-close across the stack, operator shear).
+          The charged pressure is the pump stop pressure, used for both Method A and Method B.</p>
+      </div>
+
+      <div class="card">
+        <h2>BOP Stack Configuration <span class="tag">FVR</span></h2>
+        <p class="note">Functional Volume Requirement (FVR) = max(&Sigma; closing volumes, &Sigma; opening volumes)
+          across the configured equipment.</p>
+        <table class="eq" id="bopTable">
+          <thead><tr><th>Equipment</th><th>RWP</th><th>Close vol</th><th>Open vol</th><th>Ratio</th><th>Press. to close</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <button class="add" data-add="bop">+ Add equipment</button>
+        <div class="mini-result" id="fvrResult"></div>
+      </div>
+    </section>
+
+    <!-- ============ RESULTS COLUMN ============ -->
+    <section class="col results">
+      <div class="card headline">
+        <div class="headline-main">
+          <div class="big" id="r_fvr">&mdash;</div>
+          <div class="big-label">Functional volume requirement (gal)</div>
+        </div>
+        <div class="headline-side">
+          <div class="kpi"><span id="r_bottlesA">&mdash;</span><label>bottles &mdash; Method A</label></div>
+          <div class="kpi"><span id="r_bottlesB">&mdash;</span><label>bottles &mdash; Method B</label></div>
+          <div class="kpi"><span id="r_mop">&mdash;</span><label>MOP (psig)</label></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Method A vs. Method B</h2>
+        <table class="dtable" id="r_compare">
+          <thead><tr><th></th><th>Method A <span class="u">ideal gas</span></th><th>Method B <span class="u">NIST density</span></th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <p class="note">Pressure-limited VE<sub>p</sub> and volume-limited VE<sub>v</sub> are computed at the
+          <b>specified</b> precharge; governing VE = min(VE<sub>p</sub>, VE<sub>v</sub>). Bottles are rounded up.</p>
+      </div>
+
+      <div class="card collapsible open">
+        <h2 class="toggle">Method A detail &mdash; ideal gas <span class="chev">&#9656;</span></h2>
+        <div class="body" id="r_methodA"></div>
+      </div>
+      <div class="card collapsible open">
+        <h2 class="toggle">Method B detail &mdash; NIST density <span class="chev">&#9656;</span></h2>
+        <div class="body" id="r_methodB"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="wrap foot">
+    <p>2nd-edition sizing per API 16D Annex C (Examples 1 &amp; 2). Method A uses the ideal-gas law; Method B interpolates
+       nitrogen density from a NIST grid. This tool is for engineering estimation; verify against the standard for design decisions.</p>
+  </footer>
+
+  <div id="loading" class="loading">Loading&hellip;</div>
+
+  <div id="login" class="login" style="display:none">
+    <form id="loginForm" class="login-box" autocomplete="off">
+      <div class="logo-chip login-chip"><img src="assets/Logo.png" alt="Sigma Energy" class="login-logo" /></div>
+      <h2>Sign in</h2>
+      <p class="login-sub">Enter your credentials to access the calculator.</p>
+      <label>Username
+        <input type="text" id="loginUser" autocomplete="username" required /></label>
+      <label>Password
+        <input type="password" id="loginPass" autocomplete="current-password" required /></label>
+      <div id="loginError" class="login-error"></div>
+      <button type="submit" class="login-btn" id="loginBtn">Sign in</button>
+    </form>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/app2.js"></script>
+</body>
+</html>

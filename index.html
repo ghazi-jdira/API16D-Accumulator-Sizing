@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API 16D Accumulator Sizing Calculator</title>
+  <meta name="description" content="Interactive API 16D surface BOP accumulator sizing calculator (Methods B & C) with NIST nitrogen properties." />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap topbar-row">
+      <div class="brand">
+        <div class="logo-chip"><img src="assets/Logo.png" alt="Sigma Energy" class="logo" /></div>
+        <div>
+          <h1>API 16D Accumulator Sizing</h1>
+          <p class="sub">Offshore surface BOP stack &mdash; Method B (drawdown) + Method C (well-control) optimization, with NIST nitrogen properties. <a href="edition2.html" class="ed-link">2nd edition (Method A / B) &rarr;</a></p>
+        </div>
+      </div>
+      <button id="logoutBtn" class="logout" style="display:none">Log out</button>
+    </div>
+  </header>
+
+  <main class="wrap layout">
+    <!-- ============ INPUT COLUMN ============ -->
+    <section class="col inputs">
+      <div class="card">
+        <h2>Environmental &amp; Accumulator Inputs</h2>
+        <div class="grid2">
+          <label>Atmospheric pressure <span class="u">psia</span>
+            <input type="number" id="atmospheric" value="14.7" step="0.1" /></label>
+          <label>Surface temp at precharge <span class="u">&deg;F</span>
+            <input type="number" id="surfaceTemp" value="85" step="1" /></label>
+          <label>Temperature range &plusmn; <span class="u">&deg;F</span>
+            <input type="number" id="tempRange" value="15" step="1" /></label>
+          <label>Accumulator RWP (system) <span class="u">psig</span>
+            <input type="number" id="rwp" value="3000" step="50" /></label>
+          <label>MOP override <span class="u">psig (optional)</span>
+            <input type="number" id="mopOverride" placeholder="auto (shear calc)" step="10" /></label>
+          <label>Precharge override <span class="u">psig (optional)</span>
+            <input type="number" id="prechargeOverride" value="1624" step="10" /></label>
+        </div>
+        <p class="note">Pump stop (Method B, 100%) = RWP &nbsp;&bull;&nbsp; pump start (Method C, 90%) = 0.9 &times; RWP.
+          Leave precharge override blank to use the calculated optimum.</p>
+      </div>
+
+      <div class="card">
+        <h2>Shear Pressure Calculator <span class="tag">Cameron EB702D</span></h2>
+        <div class="grid2">
+          <label class="full">BOP type
+            <select id="sh_bopType"></select></label>
+          <label>RAM type
+            <select id="sh_ramType"></select></label>
+          <label>Pipe grade
+            <select id="sh_pipeGrade"></select></label>
+          <label>Pipe OD <span class="u">in</span>
+            <input type="number" id="sh_od" value="3.5" step="0.01" /></label>
+          <label>Wall thickness <span class="u">in</span>
+            <input type="number" id="sh_wall" value="0.45" step="0.01" /></label>
+          <label>Pipe weight <span class="u">ppf</span>
+            <input type="number" id="sh_ppf" value="13.3" step="0.1" /></label>
+          <label>Wellbore pressure Pw <span class="u">psi</span>
+            <input type="number" id="sh_pw" value="3000" step="50" /></label>
+          <label>Max operator pressure <span class="u">psi (override)</span>
+            <input type="number" id="sh_maxOp" placeholder="auto from BOP rating" step="50" /></label>
+        </div>
+        <div id="shearResult" class="mini-result"></div>
+      </div>
+
+      <div class="card">
+        <h2>Method B Equipment <span class="tag">drawdown</span></h2>
+        <p class="note">Close all rams, open valve, close annular &mdash; sum of closing volumes is the functional requirement (FVR<sub>B</sub>).</p>
+        <table class="eq" id="mbTable">
+          <thead><tr><th>Equipment</th><th>RWP</th><th>Close vol (gal)</th><th>Closing ratio</th><th>Press. to close (psig)</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <button class="add" data-add="mb">+ Add equipment</button>
+      </div>
+
+      <div class="card">
+        <h2>Method C Equipment <span class="tag">well-control sequence</span></h2>
+        <p class="note">Close annular and blind shear ram. A row counts as a shear/seal phase
+          (adjusted pressure = MOPFLPS + RWP / ratio) when both a ratio and a MOPFLPS are entered; otherwise the published pressure-to-close is used.</p>
+        <table class="eq" id="mcTable">
+          <thead><tr><th>Equipment</th><th>RWP</th><th>Close vol</th><th>Ratio</th><th>MOPFLPS</th><th>Adj. press</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <button class="add" data-add="mc">+ Add equipment</button>
+      </div>
+    </section>
+
+    <!-- ============ RESULTS COLUMN ============ -->
+    <section class="col results">
+      <div class="card headline">
+        <div class="headline-main">
+          <div class="big" id="r_minVolume">&mdash;</div>
+          <div class="big-label">Minimum accumulator volume required (gal)</div>
+        </div>
+        <div class="headline-side">
+          <div class="kpi"><span id="r_b11">&mdash;</span><label>&times; 11-gal bottles</label></div>
+          <div class="kpi"><span id="r_b15">&mdash;</span><label>&times; 15-gal bottles</label></div>
+          <div class="kpi"><span id="r_precharge">&mdash;</span><label>precharge (psig)</label></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Volume vs. Precharge Pressure</h2>
+        <canvas id="chart" width="640" height="360"></canvas>
+        <div class="legend">
+          <span class="lg lg-b">Method B</span>
+          <span class="lg lg-c">Method C</span>
+          <span class="lg lg-opt">Selected optimum</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Decision &amp; Optimization</h2>
+        <div id="r_decision" class="decision"></div>
+      </div>
+
+      <div class="card collapsible">
+        <h2 class="toggle">Method B detail <span class="chev">&#9656;</span></h2>
+        <div class="body" id="r_methodB"></div>
+      </div>
+      <div class="card collapsible">
+        <h2 class="toggle">Method C detail <span class="chev">&#9656;</span></h2>
+        <div class="body" id="r_methodC"></div>
+      </div>
+      <div class="card collapsible">
+        <h2 class="toggle">Volumetric efficiencies <span class="chev">&#9656;</span></h2>
+        <div class="body" id="r_ve"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="wrap foot">
+    <p>Calculations follow API 16D Annex C (Example 6 reference case). Nitrogen properties interpolated from a NIST density/entropy grid.
+       This tool is for engineering estimation; verify against the standard for design decisions.</p>
+  </footer>
+
+  <div id="loading" class="loading">Loading NIST property data&hellip;</div>
+
+  <div id="login" class="login" style="display:none">
+    <form id="loginForm" class="login-box" autocomplete="off">
+      <div class="logo-chip login-chip"><img src="assets/Logo.png" alt="Sigma Energy" class="login-logo" /></div>
+      <h2>Sign in</h2>
+      <p class="login-sub">Enter your credentials to access the calculator.</p>
+      <label>Username
+        <input type="text" id="loginUser" autocomplete="username" required /></label>
+      <label>Password
+        <input type="password" id="loginPass" autocomplete="current-password" required /></label>
+      <div id="loginError" class="login-error"></div>
+      <button type="submit" class="login-btn" id="loginBtn">Sign in</button>
+    </form>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

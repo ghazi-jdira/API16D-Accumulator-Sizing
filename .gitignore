@@ -1,0 +1,19 @@
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*~
+
+# Python (used only to regenerate data files)
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Logs
+*.log
