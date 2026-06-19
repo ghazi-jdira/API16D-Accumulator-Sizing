@@ -14,7 +14,7 @@
         <div class="logo-chip"><img src="assets/Logo.png" alt="Sigma Energy" class="logo" /></div>
         <div>
           <h1>API 16D Accumulator Sizing</h1>
-          <p class="sub">Offshore surface BOP stack &mdash; Method B (drawdown) + Method C (well-control) optimization, with NIST nitrogen properties. <a href="edition2.html" class="ed-link">2nd edition (Method A / B) &rarr;</a></p>
+          <p class="sub">Offshore surface BOP stack &mdash; Method B (drawdown) + Method C (well-control) optimization, with NIST nitrogen properties.<a href="edition2.html" class="ed-link">2nd edition (Method A / B) &rarr;</a></p>
         </div>
       </div>
       <button id="logoutBtn" class="logout" style="display:none">Log out</button>
@@ -74,7 +74,10 @@
           <thead><tr><th>Equipment</th><th>RWP</th><th>Close vol (gal)</th><th>Closing ratio</th><th>Press. to close (psig)</th><th></th></tr></thead>
           <tbody></tbody>
         </table>
-        <button class="add" data-add="mb">+ Add equipment</button>
+        <div class="add-row">
+          <button class="add" data-add="mb">+ Add equipment</button>
+          <button class="add" data-addcustom="mb">+ New custom equipment</button>
+        </div>
       </div>
 
       <div class="card">
@@ -85,7 +88,10 @@
           <thead><tr><th>Equipment</th><th>RWP</th><th>Close vol</th><th>Ratio</th><th>MOPFLPS</th><th>Adj. press</th><th></th></tr></thead>
           <tbody></tbody>
         </table>
-        <button class="add" data-add="mc">+ Add equipment</button>
+        <div class="add-row">
+          <button class="add" data-add="mc">+ Add equipment</button>
+          <button class="add" data-addcustom="mc">+ New custom equipment</button>
+        </div>
       </div>
     </section>
 

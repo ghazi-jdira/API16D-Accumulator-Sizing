@@ -99,10 +99,13 @@ table.eq input.small { width: 90px; }
 /* Method C has more columns; keep the numeric ones tight (and the cell padding
    smaller) so the whole table fits the card and the equipment column gets the
    remaining width like Method B. */
-#mcTable th:not(:first-child), #mcTable td:not(:first-child) { width: 1%; white-space: nowrap; }
-#mcTable th, #mcTable td { padding: 6px 5px; }
-#mcTable td:first-child select { min-width: 150px; }
-#mcTable input.small { width: 62px; }
+#mcTable th:not(:first-child), #mcTable td:not(:first-child),
+#mbTable th:not(:first-child), #mbTable td:not(:first-child) { width: 1%; white-space: nowrap; }
+#mcTable th, #mcTable td, #mbTable th, #mbTable td { padding: 6px 5px; }
+#mcTable td:first-child select, #mcTable td:first-child input.name,
+#mbTable td:first-child select, #mbTable td:first-child input.name { min-width: 150px; }
+#mcTable input.small, #mbTable input.small { width: 62px; }
+#mcTable input.name, #mbTable input.name { width: 100%; }
 table.eq .num { font-variant-numeric: tabular-nums; color: var(--text); white-space: nowrap; }
 .del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; line-height: 1; padding: 0 4px; }
 .del:hover { color: var(--warn); }
@@ -111,6 +114,7 @@ button.add {
   color: var(--accent); border-radius: 7px; padding: 6px 12px; cursor: pointer; font-size: 12.5px;
 }
 button.add:hover { border-color: var(--accent); }
+.add-row { display: flex; flex-wrap: wrap; gap: 8px; }
 
 /* headline */
 .headline { display: flex; justify-content: space-between; gap: 20px; align-items: center; flex-wrap: wrap; background: linear-gradient(120deg, #15263a, #18202b); }

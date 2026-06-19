@@ -67,18 +67,37 @@
   function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
   function fmt(x, d = 1) { return (typeof x === "number" && isFinite(x)) ? x.toFixed(d) : "&mdash;"; }
 
+  // Equipment cell: a catalogue dropdown, or a free-text name field for a
+  // user-defined ("custom") equipment that has no catalogue spec.
+  function equipCell(r, i, key) {
+    return r.custom
+      ? `<input class="small name" type="text" data-${key}name="${i}" placeholder="Equipment name" value="${esc(r.name ?? "")}">`
+      : `<select data-${key}="${i}">${equipOptions(r.equip)}</select>`;
+  }
+  // RWP cell: editable for custom equipment, read-only catalogue value otherwise.
+  function rwpCell(r, rwp, i, key) {
+    return r.custom
+      ? `<td><input class="small" type="number" step="50" data-${key}rwp="${i}" value="${rwp ?? ""}"></td>`
+      : `<td class="num">${rwp ?? "&mdash;"}</td>`;
+  }
+  function inputVal(x) { return typeof x === "number" && isFinite(x) ? x : ""; }
+
   function renderMB() {
     const tb = $("mbTable").querySelector("tbody");
     tb.innerHTML = mbRows.map((r, i) => {
-      const s = specs.find((x) => x.name === r.equip) || {};
-      const pclose = typeof s.pclose === "number" ? s.pclose
-        : (typeof s.ratio === "number" ? s.rwp / s.ratio : null);
+      const s = r.custom ? {} : (specs.find((x) => x.name === r.equip) || {});
+      const rwp = r.custom ? r.rwp : s.rwp;
+      // A blank override falls back to the catalogue default (server does the same).
+      const close = r.close ?? s.close;
+      const ratio = r.ratio ?? (typeof s.ratio === "number" ? s.ratio : null);
+      const pclose = r.pclose ?? (typeof s.pclose === "number" ? s.pclose
+        : (typeof ratio === "number" && typeof rwp === "number" ? rwp / ratio : null));
       return `<tr>
-        <td><select data-mb="${i}">${equipOptions(r.equip)}</select></td>
-        <td class="num">${s.rwp ?? "&mdash;"}</td>
-        <td class="num">${fmt(s.close, 2)}</td>
-        <td class="num">${typeof s.ratio === "number" ? fmt(s.ratio, 2) : "&mdash;"}</td>
-        <td class="num">${fmt(pclose, 0)}</td>
+        <td>${equipCell(r, i, "mb")}</td>
+        ${rwpCell(r, rwp, i, "mb")}
+        <td><input class="small" type="number" step="0.01" data-mbclose="${i}" value="${inputVal(close)}"></td>
+        <td><input class="small" type="number" step="0.1" data-mbratio="${i}" value="${inputVal(ratio)}"></td>
+        <td><input class="small" type="number" step="10" data-mbpclose="${i}" value="${typeof pclose === "number" ? Math.round(pclose) : ""}"></td>
         <td><button class="del" data-delmb="${i}">&times;</button></td>
       </tr>`;
     }).join("");
@@ -87,10 +106,11 @@
   function renderMC() {
     const tb = $("mcTable").querySelector("tbody");
     tb.innerHTML = mcRows.map((r, i) => {
-      const s = specs.find((x) => x.name === r.equip) || {};
+      const s = r.custom ? {} : (specs.find((x) => x.name === r.equip) || {});
+      const rwp = r.custom ? r.rwp : s.rwp;
       return `<tr>
-        <td><select data-mc="${i}">${equipOptions(r.equip)}</select></td>
-        <td class="num">${s.rwp ?? "&mdash;"}</td>
+        <td>${equipCell(r, i, "mc")}</td>
+        ${rwpCell(r, rwp, i, "mc")}
         <td><input class="small" type="number" step="0.01" data-mcclose="${i}" value="${r.close ?? 0}"></td>
         <td><input class="small" type="number" step="0.1" data-mcratio="${i}" value="${r.ratio ?? ""}"></td>
         <td><input class="small" type="number" step="10" data-mcmop="${i}" value="${r.mopflps ?? ""}"></td>
@@ -327,14 +347,25 @@
   function bindTables() {
     document.addEventListener("change", (e) => {
       const t = e.target;
-      if (t.dataset.mb != null) { mbRows[+t.dataset.mb].equip = t.value; renderMB(); recompute(); }
+      // Picking a new catalogue equipment clears any per-row overrides so the
+      // new spec's defaults show through.
+      if (t.dataset.mb != null) { const r = mbRows[+t.dataset.mb]; r.equip = t.value; r.close = r.ratio = r.pclose = undefined; renderMB(); recompute(); }
       else if (t.dataset.mc != null) { mcRows[+t.dataset.mc].equip = t.value; renderMC(); recompute(); }
     });
     document.addEventListener("input", (e) => {
       const t = e.target;
-      if (t.dataset.mcclose != null) { mcRows[+t.dataset.mcclose].close = numOrNull(t.value); recompute(); }
+      // Method B overrides
+      if (t.dataset.mbclose != null) { mbRows[+t.dataset.mbclose].close = numOrNull(t.value); recompute(); }
+      else if (t.dataset.mbratio != null) { mbRows[+t.dataset.mbratio].ratio = numOrNull(t.value); recompute(); }
+      else if (t.dataset.mbpclose != null) { mbRows[+t.dataset.mbpclose].pclose = numOrNull(t.value); recompute(); }
+      else if (t.dataset.mbrwp != null) { mbRows[+t.dataset.mbrwp].rwp = numOrNull(t.value); recompute(); }
+      else if (t.dataset.mbname != null) { mbRows[+t.dataset.mbname].name = t.value; recompute(); }
+      // Method C overrides
+      else if (t.dataset.mcclose != null) { mcRows[+t.dataset.mcclose].close = numOrNull(t.value); recompute(); }
       else if (t.dataset.mcratio != null) { mcRows[+t.dataset.mcratio].ratio = numOrNull(t.value); recompute(); }
       else if (t.dataset.mcmop != null) { mcRows[+t.dataset.mcmop].mopflps = numOrNull(t.value); recompute(); }
+      else if (t.dataset.mcrwp != null) { mcRows[+t.dataset.mcrwp].rwp = numOrNull(t.value); recompute(); }
+      else if (t.dataset.mcname != null) { mcRows[+t.dataset.mcname].name = t.value; recompute(); }
     });
     document.addEventListener("click", (e) => {
       const t = e.target;
@@ -342,6 +373,8 @@
       else if (t.dataset.delmc != null) { mcRows.splice(+t.dataset.delmc, 1); renderMC(); recompute(); }
       else if (t.dataset.add === "mb") { mbRows.push({ equip: specNames[0] }); renderMB(); recompute(); }
       else if (t.dataset.add === "mc") { mcRows.push({ equip: specNames[0], close: 0, ratio: null, mopflps: null }); renderMC(); recompute(); }
+      else if (t.dataset.addcustom === "mb") { mbRows.push({ custom: true, name: "", rwp: 5000, close: 0, ratio: null, pclose: null }); renderMB(); recompute(); }
+      else if (t.dataset.addcustom === "mc") { mcRows.push({ custom: true, name: "", rwp: 5000, close: 0, ratio: null, mopflps: null }); renderMC(); recompute(); }
       else if (t.classList.contains("toggle")) { t.parentElement.classList.toggle("open"); }
     });
   }
