@@ -8,5 +8,5 @@
  * and formulas live on the backend and are never sent to the browser.
  */
 window.APP_CONFIG = {
-  apiBase: "https://api16d-backend.onrender.com",
+  apiBase: "https://api16d-backend-1.onrender.com",
 };
